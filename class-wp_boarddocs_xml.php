@@ -6,11 +6,13 @@
 class wp_boarddocs_xml {
 	var $feed				= null;
 	var $feed_data			= null;
+	var $feed_prefix 		= null;
 	var $adopted_text		= 'Adopted on ';
 	var $not_adopted_text	= 'Not yet adopted';
 	
 	function __construct() {
 		add_shortcode( 'boarddocs-feed', array( $this, 'display_feed' ) );
+		$this->feed_prefix = esc_url( get_mnetwork_option( 'wp-boarddocs-feed-prefix', false ) );
 	}
 	
 	protected function _determine_type( $feed ) {
@@ -18,12 +20,25 @@ class wp_boarddocs_xml {
 		return array_pop( explode( '-', $feed ) );
 	}
 	
+	function admin_page() {
+?>
+
+<?php
+	}
+	
+	function save_settings( $input ) {
+		$input['wp-boarddocs-feed-prefix'] = esc_url( $input['wp-boarddocs-feed-prefix'] );
+		update_mnetwork_option( 'wp-boarddocs-feed-prefix', $input['wp-boarddocs-feed-prefix'] );
+	}
+	
 	/**
 	 * Parse and output the XML feed
 	 */
 	function display_feed( $atts ) {
+		if( !array_key_exists( 'type', $atts ) || empty( $atts['type'] ) )
+			$atts['type'] = 'ActivePolicies';
 		if( !array_key_exists( 'feed', $atts ) )
-			return '';
+			$atts['feed'] = $this->feed_prefix . $atts['type'];
 		
 		$this->_retrieve_feed( $atts['feed'] );
 		if( empty( $this->feed_data ) )
