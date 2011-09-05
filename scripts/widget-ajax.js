@@ -15,6 +15,79 @@ jQuery( function( $ ) {
 	} );
 	$('.boarddocs-type-selector').each( function() { return_boarddocs_sections( $(this).closest( '.widget-content' ) ); } );
 	
+	var get_boarddocs_options = {
+		'xml' : null,
+		'opts' : ['<option value="">-- Please choose a section to show --</option>'],
+		'policies' : function() {
+			get_boarddocs_options.opts = ['<option value="">-- Please choose a section to show --</option>'];
+			var books = get_boarddocs_options.xml.find( 'book' );
+			var sects = null;
+			books.each( function() { 
+				console.log( $(this) );
+				get_boarddocs_options.opts.push( '<option value="[book]' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>' );
+				sects = $(this).find( 'section' );
+				for( var i=0; i<sects.length; i++ ) {
+					get_boarddocs_options.opts.push( '<option value="[section]' + $(sects[i]).attr('name') + '">' + '- ' + $(sects[i]).attr('name') + '</option>' );
+				}
+			} );
+		},
+		'board' : function() {
+			get_boarddocs_options.opts = ['<option value="">-- Please choose a member to show --</option>'];
+			var members = get_boarddocs_options.xml.find( 'member' );
+			members.each( function() {
+				get_boarddocs_options.opts.push( '<option value="[member]' + $(this).find('name').text() + '">' + $(this).find('name').text() + '</option>' );
+			} );
+		},
+		'events' : function() {
+			get_boarddocs_options.opts = ['<option value="">-- Please choose an event to show --</option>'];
+			var cats = get_boarddocs_options.xml.find( 'category' );
+			var events = null;
+			cats.each( function() {
+				get_boarddocs_options.opts.push( '<option value="[category]' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>' );
+				events = $(this).find('event');
+				for( var i=0; i<events.length; i++ ) {
+					get_boarddocs_options.opts.push( '<option value="[event]' + $(events[i]).attr('id') + '">- ' + $(events[i]).find('name').text() + '</option>' );
+				}
+			} );
+		},
+		'general' : function() {
+			get_boarddocs_options.opts = ['<option value="">-- Please choose an item to show --</option>'];
+			var cats = get_boarddocs_options.xml.find( 'category' );
+			cats.each( function() {
+				get_boarddocs_options.opts.push( '<option value="[category]' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>' );
+				items = $(this).find('item');
+				for( var i=0; i<items.length; i++ ) {
+					get_boarddocs_options.opts.push( '<option value="[item]' + $(items[i]).attr('id') + '">- ' + $(items[i]).find('name').text() + '</option>' );
+				}
+			} );
+		},
+		'goals' : function() {
+			get_boarddocs_options.opts = ['<option value="">-- Please choose a goal to show --</option>'];
+			var cats = get_boarddocs_options.xml.find( 'category' );
+			cats.each( function() {
+				get_boarddocs_options.opts.push( '<option value="[category]' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>' );
+				items = $(this).find('goal');
+				for( var i=0; i<items.length; i++ ) {
+					get_boarddocs_options.opts.push( '<option value="[goal]' + $(items[i]).attr('id') + '">- ' + $(items[i]).find('name').text() + '</option>' );
+				}
+			} );
+		},
+		'meetings' : function() {
+			get_boarddocs_options.opts = ['<option value="">-- Please choose a meeting to show --</option>'];
+			var meetings = get_boarddocs_options.xml.find( 'meeting' );
+			meetings.each( function() {
+				get_boarddocs_options.opts.push( '<option value="[meeting]' + $(this).attr('id') + '">' + $(this).children('name').text() + '</option>' );
+			} );
+		},
+		'minutes' : function() {
+			get_boarddocs_options.opts = ['<option value="">-- Please choose a meeting to show --</option>'];
+			var meetings = get_boarddocs_options.xml.find( 'meeting' );
+			meetings.each( function() {
+				get_boarddocs_options.opts.push( '<option value="[meeting]' + $(this).children('name').text() + '">' + $(this).children('name').text() + '</option>' );
+			} );
+		}
+	};
+	
 	function return_boarddocs_sections( el ) {
 		var prefix = $(el).find( '.boarddocs_prefix_val' ).attr('value');
 		var feed_type = $(el).find( '.boarddocs-type-selector option:selected' ).attr('value');
@@ -30,25 +103,28 @@ jQuery( function( $ ) {
 				$(el).append( '<select name="' + inputname + '" class="widefat boarddocs_sections"></select>' );
 			}
 			var opts = boarddocs_build_section_options( data, inputname );
-			console.log( opts );
 			$(el).find('select.boarddocs_sections').html( opts );
 		} );
 		
 		function boarddocs_build_section_options( data, inputname ) {
-			$xml = $(data);
-			var books = $xml.find( 'book' );
-			var sects = null;
-			var opts = ['<option value="">-- Please choose a section to show --</option>'];
-			books.each( function() { 
-				console.log( $(this) );
-				opts.push( '<option value="[book]' + $(this).attr('name') + '">' + $(this).attr('name') + '</option>' );
-				sects = $(this).find( 'section' );
-				for( var i=0; i<sects.length; i++ ) {
-					opts.push( '<option value="[section]' + $(sects[i]).attr('name') + '">' + '- ' + $(sects[i]).attr('name') + '</option>' );
-				}
-			} );
+			get_boarddocs_options.xml = $(data);
+			if( 'ActivePolicies' == feed_type || 'PoliciesUnderConsideration' == feed_type ) {
+				get_boarddocs_options.policies( data );
+			} else if( 'Board' == feed_type ) {
+				get_boarddocs_options.board( data );
+			} else if( 'Events' == feed_type ) {
+				get_boarddocs_options.events( data );
+			} else if( 'General' == feed_type ) {
+				get_boarddocs_options.general( data );
+			} else if( 'Goals' == feed_type ) {
+				get_boarddocs_options.goals( data );
+			} else if( 'ActiveMeetings' == feed_type || 'CurrentMeetings' == feed_type ) {
+				get_boarddocs_options.meetings( data );
+			} else if( 'Minutes' == feed_type ) {
+				get_boarddocs_options.minutes( data );
+			}
 			
-			return opts.join( '' );
+			return get_boarddocs_options.opts.join( '' );
 		}
 		
 		function boarddocs_widget_parse_input_name( inName ) {
