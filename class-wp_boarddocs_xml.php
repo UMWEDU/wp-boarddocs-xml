@@ -6,29 +6,150 @@
 class wp_boarddocs_xml {
 	var $feed				= null;
 	var $feed_data			= null;
+	var $feed_types			= null;
 	var $feed_prefix 		= null;
 	var $adopted_text		= 'Adopted on ';
 	var $not_adopted_text	= 'Not yet adopted';
 	
+	/**
+	 * Build our object
+	 */
 	function __construct() {
 		add_shortcode( 'boarddocs-feed', array( $this, 'display_feed' ) );
+		$this->get_feed_prefix();
+		add_action( 'admin_init', array( &$this, 'admin_init' ) );
+		$this->feed_types = apply_filters( 'bdxml-feed-types', array( 
+			'ActivePolicies' => __( 'Active Policies' ), 
+			'Board' => __( 'Board Members' ), 
+			'Events' => __( 'Events' ), 
+			'General' => __( 'General' ), 
+			'Goals' => __( 'Goals' ), 
+			'ActiveMeetings' => __( 'Active Meetings' ), 
+			'CurrentMeetings' => __( 'Current Meetings' ), 
+			'PoliciesUnderConsideration' => __( 'Policies Under Consideration' ), 
+			'Minutes' => __( 'Minutes' ) 
+		) );
+	}
+	
+	function get_feed_prefix() {
 		$this->feed_prefix = esc_url( get_mnetwork_option( 'wp-boarddocs-feed-prefix', false ) );
 	}
 	
-	protected function _determine_type( $feed ) {
-		$feed = strtolower( array_pop( explode( '/', $feed ) ) );
-		return array_pop( explode( '-', $feed ) );
+	/**
+	 * Set up our settings fields
+	 */
+	function admin_init() {
+		register_setting( 'general', 'wp-boarddocs-feed-prefix', array( &$this, 'save_settings_prefix' ) );
+		register_setting( 'general', 'wp-boarddocs-feed-default', array( &$this, 'save_settings_default' ) );
+		add_settings_section( 'boarddocs-xml', __( 'BoardDocs XML' ), array( &$this, 'settings_section' ), 'general' );
+		add_settings_field( 'wp-boarddocs-feed-prefix', __( 'Feed Prefix:' ), array( &$this, 'settings_field' ), 'general', 'boarddocs-xml', array( 'label_for' => 'wp-boarddocs-feed-prefix' ) );
+		add_settings_field( 'wp-boarddocs-feed-default', __( 'Default Feed Type:' ), array( &$this, 'settings_field' ), 'general', 'boarddocs-xml', array( 'label_for' => 'wp-boarddocs-feed-default' ) );
 	}
 	
-	function admin_page() {
+	/**
+	 * Output any information that should appear before the settings section
+	 */
+	function settings_section() {
 ?>
-
+<p><?php _e( 'The options in this section will be updated for <strong>all sites</strong> in this installation.' ) ?></p>
 <?php
 	}
 	
-	function save_settings( $input ) {
-		$input['wp-boarddocs-feed-prefix'] = esc_url( $input['wp-boarddocs-feed-prefix'] );
-		update_mnetwork_option( 'wp-boarddocs-feed-prefix', $input['wp-boarddocs-feed-prefix'] );
+	/**
+	 * Output the HTML of the appropriate settings field
+	 */
+	function settings_field( $args ) {
+		if( 'wp-boarddocs-feed-default' == $args['label_for'] )
+			return $this->settings_field_default( $args );
+		else
+			return $this->settings_field_prefix( $args );
+	}
+	
+	/**
+	 * Output the HTML for the Prefix field
+	 */
+	function settings_field_prefix( $args ) {
+		if( empty( $this->feed_prefix ) )
+			$this->get_feed_prefix();
+?>
+	<input class="regular-text" type="url" name="<?php echo $args['label_for'] ?>" id="<?php echo $args['label_for'] ?>" value="<?php echo $this->feed_prefix ?>"/>
+    <p class="description"><?php printf( __( 'Please enter the beginning of the URL that leads to the XML feeds. This URL should be similar to %s. You can get this prefix by visiting one of your BoardDocs feeds and removing the part of the URL that appears after the last hyphen.' ), 'http://www.boarddocs.com/[state]/[organization]/Board.nsf/XML-' ) ?></p>
+<?php
+	}
+	
+	/**
+	 * Output the HTML for the Default-type field
+	 */
+	function settings_field_default( $args ) {
+		if( empty( $this->feed_default ) )
+			$this->feed_default = get_mnetwork_option( 'wp-boarddocs-feed-default', false );
+?>
+	<select name="wp-boarddocs-feed-default" id="wp-boarddocs-feed-default">
+    	<option value=""><?php _e( '-- Please choose one --' ) ?></option>
+<?php
+		foreach( $this->feed_types as $ft=>$lbl ) {
+?>
+		<option value="<?php echo $ft ?>"<?php selected( $this->feed_default, $ft ) ?>><?php echo $lbl ?></option>
+<?php
+		}
+?>
+    </select>
+<?php
+	}
+	
+	/**
+	 * Save the Prefix setting
+	 */
+	function save_settings_prefix( $input ) {
+		if( !isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
+			update_mnetwork_option( 'wp-boarddocs-feed-prefix', $input );
+			return false;
+		} else {
+			$input = esc_url( $input );
+			
+			if( empty( $input ) )
+				return null;
+			
+			foreach( $this->feed_types as $ft=>$ignore ) {
+				$type_len = 0 - strlen( $ft );
+				if( strtolower( $ft ) == strtolower( substr( $input, $type_len ) ) ) {
+					$input = substr( $input, 0, $type_len );
+					break;
+				}
+			}
+			if( '-' != substr( $input, -1 ) )
+				$input .= '-';
+			
+			return $input;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Save the Default-type setting
+	 */
+	function save_settings_default( $input ) {
+		if( !isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
+			update_mnetwork_option( 'wp-boarddocs-feed-default', $input );
+			return false;
+		} else {
+			if( empty( $input ) || !array_key_exists( $input, $this->feed_types ) )
+				return null;
+			
+			return $input;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Determine what type of field is being shown
+	 * @deprecated since 0.2
+	 */
+	protected function _determine_type( $feed ) {
+		$feed = strtolower( array_pop( explode( '/', $feed ) ) );
+		return array_pop( explode( '-', $feed ) );
 	}
 	
 	/**
@@ -46,8 +167,8 @@ class wp_boarddocs_xml {
 		if( !array_key_exists( 'type', $atts ) || empty( $atts['type'] ) )
 			$atts['type'] = $this->_determine_type( $atts['feed'] );
 		
-		if( method_exists( $this, 'display_' . $atts['type'] ) )
-			return call_user_method( 'display_' . $atts['type'], $this, $atts );
+		if( method_exists( $this, 'display_' . strtolower( $atts['type'] ) ) )
+			return call_user_method( 'display_' . strtolower( $atts['type'] ), $this, $atts );
 		
 		return '';
 	}
