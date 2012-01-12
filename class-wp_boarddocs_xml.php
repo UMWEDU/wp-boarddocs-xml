@@ -4,12 +4,13 @@
  * A class to assist in parsing and displaying an XML file from BoardDocs in WordPress
  */
 class wp_boarddocs_xml {
-	var $feed				= null;
-	var $feed_data			= null;
-	var $feed_types			= null;
-	var $feed_prefix 		= null;
-	var $adopted_text		= 'Adopted on ';
-	var $not_adopted_text	= 'Not yet adopted';
+	var $feed             = null;
+	var $feed_data        = null;
+	var $feed_types       = null;
+	var $feed_prefix      = null;
+	var $adopted_text     = 'Adopted on ';
+	var $not_adopted_text = 'Not yet adopted';
+	var $transient_time   = 1800;
 	
 	/**
 	 * Build our object
@@ -69,7 +70,7 @@ class wp_boarddocs_xml {
 	 * Output the HTML for the Prefix field
 	 */
 	function settings_field_prefix( $args ) {
-		if( empty( $this->feed_prefix ) )
+		if ( empty( $this->feed_prefix ) )
 			$this->get_feed_prefix();
 ?>
 	<input class="regular-text" type="url" name="<?php echo $args['label_for'] ?>" id="<?php echo $args['label_for'] ?>" value="<?php echo $this->feed_prefix ?>"/>
@@ -81,7 +82,7 @@ class wp_boarddocs_xml {
 	 * Output the HTML for the Default-type field
 	 */
 	function settings_field_default( $args ) {
-		if( empty( $this->feed_default ) )
+		if ( empty( $this->feed_default ) )
 			$this->feed_default = get_mnetwork_option( 'wp-boarddocs-feed-default', false );
 ?>
 	<select name="wp-boarddocs-feed-default" id="wp-boarddocs-feed-default">
@@ -101,23 +102,23 @@ class wp_boarddocs_xml {
 	 * Save the Prefix setting
 	 */
 	function save_settings_prefix( $input ) {
-		if( !isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
+		if ( ! isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
 			update_mnetwork_option( 'wp-boarddocs-feed-prefix', $input );
 			return false;
 		} else {
 			$input = esc_url( $input );
 			
-			if( empty( $input ) )
+			if ( empty( $input ) )
 				return null;
 			
-			foreach( $this->feed_types as $ft=>$ignore ) {
+			foreach ( $this->feed_types as $ft=>$ignore ) {
 				$type_len = 0 - strlen( $ft );
 				if( strtolower( $ft ) == strtolower( substr( $input, $type_len ) ) ) {
 					$input = substr( $input, 0, $type_len );
 					break;
 				}
 			}
-			if( '-' != substr( $input, -1 ) )
+			if ( '-' != substr( $input, -1 ) )
 				$input .= '-';
 			
 			return $input;
@@ -130,11 +131,11 @@ class wp_boarddocs_xml {
 	 * Save the Default-type setting
 	 */
 	function save_settings_default( $input ) {
-		if( !isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
+		if ( !isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
 			update_mnetwork_option( 'wp-boarddocs-feed-default', $input );
 			return false;
 		} else {
-			if( empty( $input ) || !array_key_exists( $input, $this->feed_types ) )
+			if ( empty( $input ) || !array_key_exists( $input, $this->feed_types ) )
 				return null;
 			
 			return $input;
@@ -156,18 +157,31 @@ class wp_boarddocs_xml {
 	 * Parse and output the XML feed
 	 */
 	function display_feed( $atts ) {
-		if( !array_key_exists( 'type', $atts ) || empty( $atts['type'] ) )
+		if ( empty( $this->feed_prefix ) )
+			$this->get_feed_prefix();
+		
+		if ( ! array_key_exists( 'type', $atts ) || empty( $atts['type'] ) )
 			$atts['type'] = 'ActivePolicies';
-		if( !array_key_exists( 'feed', $atts ) )
+		if ( ! array_key_exists( 'feed', $atts ) )
 			$atts['feed'] = $this->feed_prefix . $atts['type'];
 		
+		if ( array_key_exists( 'show_what', $atts ) && ! empty( $atts['show_what'] ) ) {
+			if ( preg_match( '/\[([a-z]+)\](.+)/i', $atts['show_what'], $show_what ) ) {
+				$atts[$show_what[1]] = $show_what[2];
+			}
+			/*if ( '[book]' == substr( $atts['show_what'], 0, strlen( '[book]' ) ) )
+				$atts['book'] = str_replace( '[book]', '', $atts['show_what'] );
+			if ( '[section]' == substr( $atts['show_what'], 0, strlen( '[section]' ) ) )
+				$atts['section'] = str_replace( '[section]', '', $atts['show_what'] );*/
+		}
+		
 		$this->_retrieve_feed( $atts['feed'] );
-		if( empty( $this->feed_data ) )
+		if ( empty( $this->feed_data ) )
 			return '';
-		if( !array_key_exists( 'type', $atts ) || empty( $atts['type'] ) )
+		if ( ! array_key_exists( 'type', $atts ) || empty( $atts['type'] ) )
 			$atts['type'] = $this->_determine_type( $atts['feed'] );
 		
-		if( method_exists( $this, 'display_' . strtolower( $atts['type'] ) ) )
+		if ( method_exists( $this, 'display_' . strtolower( $atts['type'] ) ) )
 			return call_user_method( 'display_' . strtolower( $atts['type'] ), $this, $atts );
 		
 		return '';
@@ -177,6 +191,9 @@ class wp_boarddocs_xml {
 	 * Output the ActivePolicies XML feed
 	 */
 	function display_activepolicies( $atts=array() ) {
+		print( "\n<!--\n" );
+		var_dump( $atts );
+		print( "\n-->\n" );
 		$show_book 		= array_key_exists( 'book', $atts ) ? html_entity_decode( $atts['book'] ) : false;
 		$show_section 	= array_key_exists( 'section', $atts ) ? html_entity_decode( $atts['section'] ) : false;
 		$link_policy	= array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
@@ -186,11 +203,11 @@ class wp_boarddocs_xml {
 		$out = '
 		<article class="policy-list">';
 		$xml = simplexml_load_string( $this->feed_data );
-		foreach( $xml as $book ) {
-			if( $show_book && $book['name'] != $show_book )
+		foreach ( $xml as $book ) {
+			if ( $show_book && $book['name'] != $show_book )
 				continue;
 				
-			if( false === $show_book ) {
+			if ( false === $show_book && false === $show_section ) {
 				/* Only show the book heading if we are showing multiple books */
 				$out .= '
 			<header class="policy-book-title">
@@ -200,13 +217,13 @@ class wp_boarddocs_xml {
 			</header>';
 			}
 			
-			foreach( $book->section as $section ) {
-				if( $show_section && $section['name'] != $show_section )
+			foreach ( $book->section as $section ) {
+				if ( $show_section && $section['name'] != $show_section )
 					continue;
 				$out .= '
 			<section class="policy-section">';
 				
-				if( false === $show_section ) {
+				if ( false === $show_section ) {
 					/* Only show the section heading if we are showing multiple sections */
 					$out .= '
 				<header class="policy-section-title">
@@ -218,7 +235,7 @@ class wp_boarddocs_xml {
 				
 				$out .= '
 				<ul class="policy-items">';
-				foreach( $section->policy as $policy ) {
+				foreach ( $section->policy as $policy ) {
 					$out .= '
 					<li class="policy" id="policy-' . $policy['id'] . '">';
 					$out .= $link_policy ? '
@@ -255,10 +272,10 @@ class wp_boarddocs_xml {
 			<ul class="members">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
-		foreach( $xml as $member ) {
+		foreach ( $xml as $member ) {
 			$out .= '
 				<li class="board-member" id="member-' . $member['id'] . '">';
-			if( $link_member )
+			if ( $link_member )
 				$out .= '
 					<a href="' . $member->link[0] . '">' . $member->name[0] . '</a>';
 			else
@@ -286,11 +303,11 @@ class wp_boarddocs_xml {
 		<article class="board-event-lists">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
-		foreach( $xml as $cat ) {
-			if( $show_category && $cat['name'] != $show_category )
+		foreach ( $xml as $cat ) {
+			if ( $show_category && $cat['name'] != $show_category )
 				continue;
 			
-			if( false === $show_category ) {
+			if ( false === $show_category ) {
 				/* Only display the category heading if we are displaying multiple categories */
 				$out .= '
 				<header>
@@ -303,8 +320,8 @@ class wp_boarddocs_xml {
 			$out .= '
 				<ul class="event-list">';
 			
-			foreach( $cat as $event ) {
-				if( $show_event && $event['id'] != $show_event )
+			foreach ( $cat as $event ) {
+				if ( $show_event && $event['id'] != $show_event )
 					continue;
 				
 				$out .= '
@@ -348,11 +365,11 @@ class wp_boarddocs_xml {
 		<article class="board-general-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
-		foreach( $xml as $cat ) {
-			if( $show_category && $cat['name'] != $show_category )
+		foreach ( $xml as $cat ) {
+			if ( $show_category && $cat['name'] != $show_category )
 				continue;
 			
-			if( false === $show_category ) {
+			if ( false === $show_category ) {
 				/* Only display the category heading if we are displaying multiple categories */
 				$out .= '
 				<header>
@@ -366,8 +383,8 @@ class wp_boarddocs_xml {
 			$out .= '
 				<ul class="item-list">';
 			
-			foreach( $cat as $item ) {
-				if( $show_item && $item['id'] != $show_item )
+			foreach ( $cat as $item ) {
+				if ( $show_item && $item['id'] != $show_item )
 					continue;
 				
 				$out .= '
@@ -402,11 +419,11 @@ class wp_boarddocs_xml {
 		<article class="board-goal-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
-		foreach( $xml as $cat ) {
-			if( $show_category && $cat['name'] != $show_category )
+		foreach ( $xml as $cat ) {
+			if ( $show_category && $cat['name'] != $show_category )
 				continue;
 			
-			if( false === $show_category ) {
+			if ( false === $show_category ) {
 				/* Only display the category heading if we are displaying multiple categories */
 				$out .= '
 				<header>
@@ -420,8 +437,8 @@ class wp_boarddocs_xml {
 			$out .= '
 				<ul class="goal-list">';
 			
-			foreach( $cat as $goal ) {
-				if( $show_goal && $goal['id'] != $show_goal )
+			foreach ( $cat as $goal ) {
+				if ( $show_goal && $goal['id'] != $show_goal )
 					continue;
 				
 				$out .= '
@@ -455,8 +472,8 @@ class wp_boarddocs_xml {
 		<article class="board-meeting-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
-		foreach( $xml as $meeting ) {
-			if( $show_meeting && $show_meeting != $meeting['id'] )
+		foreach ( $xml as $meeting ) {
+			if ( $show_meeting && $show_meeting != $meeting['id'] )
 				continue;
 			
 			$out .= '
@@ -472,14 +489,14 @@ class wp_boarddocs_xml {
 				<p class="meeting-description">' . nl2br( $meeting->description[0] ) . '</p>';
 			$out .= '
 				<ol class="meeting-agenda">';
-			foreach( $meeting->category as $agenda ) {
+			foreach ( $meeting->category as $agenda ) {
 				$out .= '
 				<li class="meeting-agenda-category" id="agenda-category' . $agenda['id'] . '">
 					<header>
 						<h3 class="agenda-title">' . $agenda->name . '</h3>
 					</header>
 					<ol class="agenda-items">';
-				foreach( $agenda->agendaitems as $item ) {
+				foreach ( $agenda->agendaitems as $item ) {
 					$out .= '
 						<li class="agenda-item" id="agenda-item-' . $item['id'] . '">
 							<a href="' . $item->link[0] . '">' . $item->name[0] . '</a>
@@ -525,7 +542,7 @@ class wp_boarddocs_xml {
 		<article class="board-minutes-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
-		foreach( $xml as $item ) {
+		foreach ( $xml as $item ) {
 			if( $show_meeting && $show_meeting != $item->meeting[0]->name[0] )
 				continue;
 			
@@ -536,7 +553,7 @@ class wp_boarddocs_xml {
 					<p class="meeting-date"><time datetime="' . $item->meeting[0]->date[0] . '">' . $this->ap_date( $item->meeting[0]->date[0] ) . '</time></p>
 				</header>';
 			
-			foreach( $item->agendaitem as $agendaitem ) {
+			foreach ( $item->agendaitem as $agendaitem ) {
 				$out .= '
 					<p class="agenda-item"><span class="item-number">' . $agendaitem->number[0] . '</span> ' . $agendaitem->name[0] . '</p>';
 			}
@@ -557,7 +574,7 @@ class wp_boarddocs_xml {
 	 */
 	function ap_date( $datestring ) {
 		/* Determine whether or not to display the time */
-		if( strstr( $datestring, 'T' ) ) {
+		if ( strstr( $datestring, 'T' ) ) {
 			/* Determine whether anything occurs after the "T" in the date string */
 			$show_time = array_pop( explode( 'T', $datestring ) );
 			$show_time = !empty( $show_time );
@@ -565,18 +582,18 @@ class wp_boarddocs_xml {
 			$show_time = false;
 		}
 		
-		if( false === ( $timestamp = strtotime( $datestring ) ) )
+		if ( false === ( $timestamp = strtotime( $datestring ) ) )
 			return $datestring;
 		
 		$date = getdate( $timestamp );
 		$month = strlen( $date['month'] ) <= 5 ? $date['month'] : ( $date['month'] == 'September' ? 'Sept.' : substr( $date['month'], 0, 3 ) . '.' );
 		
-		if( $date['minutes'] <= 0 )
+		if ( $date['minutes'] <= 0 )
 			$minutes = '';
 		else
 			$minutes = ':' . substr( '00' . $date['minutes'], -2 );
 		
-		if( $date['hours'] >= 12 ) {
+		if ( $date['hours'] >= 12 ) {
 			$ap = ' p.m.';
 			$hour = $date['hours'] - 12;
 		} else {
@@ -585,7 +602,7 @@ class wp_boarddocs_xml {
 			$ap = ' a.m.';
 		}
 		
-		if( $hour == 12 && empty( $minutes ) ) {
+		if ( 12 == $hour && empty( $minutes ) ) {
 			$hour = $ap == ' a.m.' ? ' midnight' : ' noon';
 			$ap = '';
 		} else {
@@ -597,16 +614,23 @@ class wp_boarddocs_xml {
 	
 	protected function _retrieve_feed( $feed ) {
 		$feed_key = md5( $feed );
-		if( false !== ( $this->feed_data = get_transient( 'wpsxml_' . $feed_key ) ) )
+		/*delete_transient( 'wpsxml_' . $feed_key );*/
+		if ( false !== ( $this->feed_data = get_transient( 'wpsxml_' . $feed_key ) ) ) {
+			print( "\n<!-- Retrieved feed data for {$feed} from transient -->\n" );
 			return $this->feed_data;
+		}
 		
-		if( !class_exists( 'WP_Http' ) )
+		if ( ! class_exists( 'WP_Http' ) )
 			include_once( ABSPATH . WPINC. '/class-http.php' );
 		
 		$request = new WP_Http;
 		$result = $request->request( $feed );
+		if ( is_wp_error( $result ) ) {
+			print( "\n<!-- There was an error retrieving the feed at {$feed}:\n" . $result->get_error_message() . "\n-->\n" );
+			return '';
+		}
 		
-		if( 200 != $result['response']['code'] )
+		if ( 200 != $result['response']['code'] )
 			return '';
 		
 		$this->feed_data = $result['body'];

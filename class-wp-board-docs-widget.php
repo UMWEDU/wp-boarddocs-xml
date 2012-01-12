@@ -24,13 +24,13 @@ class wp_board_docs_widget extends WP_Widget {
 			'Minutes' => __( 'Minutes' ) 
 		) );
 		
-		if( is_admin() ) {
-			wp_register_script( 'boarddocs-widget-ajax', plugins_url( '/scripts/widget-ajax.js', __FILE__ ), array( 'jquery' ), '0.2', true );
+		if ( is_admin() ) {
+			wp_register_script( 'boarddocs-widget-ajax', plugins_url( '/scripts/widget-ajax.js', __FILE__ ), array( 'jquery' ), '0.2.30', true );
 			wp_enqueue_script( 'boarddocs-widget-ajax' );
 			wp_localize_script( 'boarddocs-widget-ajax', 'boarddocs_widget', array( 'ajax_url' => plugins_url( '/scripts/widget-ajax-xml.php', __FILE__ ) ) );
 		}
 		
-		if( isset( $GLOBALS['wp_boarddocs_xml'] ) ) {
+		if ( isset( $GLOBALS['wp_boarddocs_xml'] ) ) {
 			$this->bdxml_obj = $GLOBALS['wp_boarddocs_xml'];
 		} else {
 			global $wp_boarddocs_xml;
@@ -41,14 +41,16 @@ class wp_board_docs_widget extends WP_Widget {
 	
 	function widget( $args, $instance ) {
 		extract( $args );
-		if( empty( $instance['feed'] ) )
+		/*if ( empty( $instance['feed'] ) ) {
+			print( "\n<!-- For some reason, the instance param was empty, so no output is being generated -->\n" );
 			return;
+		}*/
 		
 		echo $before_widget;
 		
 		$title = isset( $instance['title'] ) && !empty( $instance['title'] ) ? esc_attr( $instance['title'] ) : null;
 		unset( $instance['title'] );
-		if( !empty( $title ) )
+		if ( ! empty( $title ) )
 			echo $before_title . $title . $after_title;
 			
 		echo $this->bdxml_obj->display_feed( $instance );
@@ -61,12 +63,16 @@ class wp_board_docs_widget extends WP_Widget {
 		$instance['title'] = empty( $new['title'] ) ? null : esc_attr( $new['title'] );
 		/*$instance['feed'] = esc_url( $new['feed'] );*/
 		$instance['type'] = array_key_exists( $new['type'], $this->feed_types ) ? $new['type'] : null;
+		if ( isset( $new['show_what'] ) )
+			$instance['show_what'] = $new['show_what'];
+		else
+			$instance['show_what'] = null;
 		
 		return $instance;
 	}
 	
 	function form( $instance ) {
-		if( empty( $this->bdxml_obj->feed_prefix ) )
+		if ( empty( $this->bdxml_obj->feed_prefix ) )
 			$this->bdxml_obj->get_feed_prefix();
 ?>
 <p><label for="<?php echo $this->get_field_id( 'title' ) ?>"><?php _e( 'Title' ) ?></label>
@@ -75,13 +81,16 @@ class wp_board_docs_widget extends WP_Widget {
 	<select name="<?php echo $this->get_field_name( 'type' ) ?>" id="<?php echo $this->get_field_id( 'type' ) ?>" class="widefat boarddocs-type-selector">
 		<option value=""><?php _e( '-- Please select one --' ) ?></option>
 <?php
-		foreach( $this->feed_types as $type=>$name ) {
+		foreach ( $this->feed_types as $type=>$name ) {
 ?>
 		<option value="<?php echo $type ?>"<?php selected( $type, $instance['type'] ) ?>><?php echo $name ?></option>
 <?php
 		}
 ?>
 	</select></p>
+    <p><label for="<?php echo $this->get_field_id( 'show_what' ) ?>">Show What?</label>
+    	<select class="widefat boarddocs_sections" name="<?php echo $this->get_field_name( 'show_what' ) ?>" id="<?php echo $this->get_field_id( 'show_what' ) ?>"><option value="" selected="selected">Show All Sections</option></select>
+        <span style="display: none;" class="bdPreviousValue"><?php echo isset( $instance['show_what'] ) ? $instance['show_what'] : '' ?></span></p>
 <input class="boarddocs_prefix_val" type="hidden" name="<?php echo $this->get_field_name( 'prefix' ) ?>" value="<?php echo $this->bdxml_obj->feed_prefix ?>"/>
 <?php
 	}
