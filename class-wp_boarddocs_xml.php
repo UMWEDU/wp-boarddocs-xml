@@ -175,6 +175,8 @@ class wp_boarddocs_xml {
 				$atts['section'] = str_replace( '[section]', '', $atts['show_what'] );*/
 		}
 		
+		wp_enqueue_style( 'wp-boarddocs', plugins_url( '/css/wp-boarddocs.css', __FILE__ ), array(), '0.1.27', 'all' );
+		
 		$this->_retrieve_feed( $atts['feed'] );
 		if ( empty( $this->feed_data ) )
 			return '';
@@ -201,7 +203,7 @@ class wp_boarddocs_xml {
 		$not_adopted_text 	= array_key_exists( 'not_adopted_text', $atts ) ? $atts['not_adopted_text'] : $this->not_adopted_text;
 		
 		$out = '
-		<article class="policy-list">';
+		<div class="policy-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		foreach ( $xml as $book ) {
 			if ( $show_book && $book['name'] != $show_book )
@@ -210,27 +212,27 @@ class wp_boarddocs_xml {
 			if ( false === $show_book && false === $show_section ) {
 				/* Only show the book heading if we are showing multiple books */
 				$out .= '
-			<header class="policy-book-title">
+			<div class="policy-book-title">
 				<h2>
 					' . $book['name'] . '
 				</h2>
-			</header>';
+			</div>';
 			}
 			
 			foreach ( $book->section as $section ) {
 				if ( $show_section && $section['name'] != $show_section )
 					continue;
 				$out .= '
-			<section class="policy-section">';
+			<div class="policy-section">';
 				
 				if ( false === $show_section ) {
 					/* Only show the section heading if we are showing multiple sections */
 					$out .= '
-				<header class="policy-section-title">
+				<div class="policy-section-title">
 					<h3>
 						' . $section['name'] . '
 					</h3>
-				</header>';
+				</div>';
 				}
 				
 				$out .= '
@@ -251,11 +253,11 @@ class wp_boarddocs_xml {
 				$out .= '
 				</ul>';
 				$out .= '
-			</section>';
+			</div>';
 			}
 		}
 		$out .= '
-		</article>';
+		</div>';
 		
 		return $out;
 	}
@@ -268,7 +270,7 @@ class wp_boarddocs_xml {
 		$link_member = array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
 		
 		$out = '
-		<article class="board-member-list">
+		<div class="board-member-list">
 			<ul class="members">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
@@ -286,7 +288,7 @@ class wp_boarddocs_xml {
 		
 		$out .= '
 			</ul>
-		</article>';
+		</div>';
 		
 		return $out;
 	}
@@ -300,21 +302,21 @@ class wp_boarddocs_xml {
 		$link_event = array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
 		
 		$out = '
-		<article class="board-event-lists">';
+		<div class="board-event-lists">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
 		foreach ( $xml as $cat ) {
 			if ( $show_category && $cat['name'] != $show_category )
 				continue;
 			
-			if ( false === $show_category ) {
+			if ( false === $show_category && false === $show_event ) {
 				/* Only display the category heading if we are displaying multiple categories */
 				$out .= '
-				<header>
+				<div>
 					<h2>
 						' . $cat['name'] . '
 					</h2>
-				</header>';
+				</div>';
 			}
 			
 			$out .= '
@@ -348,7 +350,7 @@ class wp_boarddocs_xml {
 		}
 		
 		$out .= '
-		</article>';
+		</div>';
 		
 		return $out;
 	}
@@ -362,31 +364,33 @@ class wp_boarddocs_xml {
 		$link_item = array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
 		
 		$out = '
-		<article class="board-general-list">';
+		<div class="board-general-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
 		foreach ( $xml as $cat ) {
 			if ( $show_category && $cat['name'] != $show_category )
 				continue;
 			
-			if ( false === $show_category ) {
+			if ( false === $show_category && false === $show_item ) {
 				/* Only display the category heading if we are displaying multiple categories */
 				$out .= '
-				<header>
+				<div>
 					<h2>
 						' . $cat['name'] . '
 					</h2>
-				</header>';
+				</div>';
 			}
 			
-			
-			$out .= '
-				<ul class="item-list">';
-			
+			$opened = false;
 			foreach ( $cat as $item ) {
 				if ( $show_item && $item['id'] != $show_item )
 					continue;
 				
+				if ( false === $opened ) {
+					$out .= '
+				<ul class="item-list">';
+					$opened = true;
+				}
 				$out .= '
 					<li class="board-item" id="board-item-' . $item['id'] . '">';
 				$out .= $link_item ?
@@ -396,13 +400,14 @@ class wp_boarddocs_xml {
 				$out .= '
 					</li>';
 			}
-			
-			$out .= '
+			if ( true === $opened ) {
+				$out .= '
 				</ul>';
+			}
 		}
 		
 		$out .= '
-		</article>';
+		</div>';
 		
 		return $out;
 	}
@@ -416,30 +421,33 @@ class wp_boarddocs_xml {
 		$link_goal = array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
 		
 		$out = '
-		<article class="board-goal-list">';
+		<div class="board-goal-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
 		foreach ( $xml as $cat ) {
 			if ( $show_category && $cat['name'] != $show_category )
 				continue;
 			
-			if ( false === $show_category ) {
+			if ( false === $show_category && false === $show_goal ) {
 				/* Only display the category heading if we are displaying multiple categories */
 				$out .= '
-				<header>
+				<div>
 					<h2>
 						' . $cat['name'] . '
 					</h2>
-				</header>';
+				</div>';
 			}
 			
-			
-			$out .= '
-				<ul class="goal-list">';
-			
+			$opened = false;
 			foreach ( $cat as $goal ) {
 				if ( $show_goal && $goal['id'] != $show_goal )
 					continue;
+				
+				if ( false === $opened ) {
+					$out .= '
+				<ul class="goal-list">';
+					$opened = true;
+				}
 				
 				$out .= '
 					<li class="board-goal" id="board-goal-' . $goal['id'] . '">';
@@ -450,13 +458,14 @@ class wp_boarddocs_xml {
 				$out .= '
 					</li>';
 			}
-			
-			$out .= '
+			if ( true === $opened ) {
+				$out .= '
 				</ul>';
+			}
 		}
 		
 		$out .= '
-		</article>';
+		</div>';
 		
 		return $out;
 	}
@@ -469,7 +478,7 @@ class wp_boarddocs_xml {
 		$link_meeting = array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
 		
 		$out = '
-		<article class="board-meeting-list">';
+		<div class="board-meeting-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
 		foreach ( $xml as $meeting ) {
@@ -477,14 +486,14 @@ class wp_boarddocs_xml {
 				continue;
 			
 			$out .= '
-			<article class="board-meeting" id="board-meeting-' . $meeting['id'] . '">';
+			<div class="board-meeting" id="board-meeting-' . $meeting['id'] . '">';
 			$out .= '
-				<header>
+				<div>
 					<h2 class="meeting-name">' . ( $link_meeting ? '<a href="' . $meeting->link[0] . '">' . $meeting->name[0] . '</a>' : $meeting->name[0] ) . '
 					</h2>';
 			$out .= empty( $meeting->start[0]->date[0] ) ? '' : '<p class="meeting-date"><time datetime="' . $meeting->start[0]->date[0] . '">' . $this->ap_date( $meeting->start[0]->date[0] ) . '</time></p>';
 			$out .= '
-				</header>';
+				</div>';
 			$out .= '
 				<p class="meeting-description">' . nl2br( $meeting->description[0] ) . '</p>';
 			$out .= '
@@ -492,9 +501,9 @@ class wp_boarddocs_xml {
 			foreach ( $meeting->category as $agenda ) {
 				$out .= '
 				<li class="meeting-agenda-category" id="agenda-category' . $agenda['id'] . '">
-					<header>
+					<div>
 						<h3 class="agenda-title">' . $agenda->name . '</h3>
-					</header>
+					</div>
 					<ol class="agenda-items">';
 				foreach ( $agenda->agendaitems as $item ) {
 					$out .= '
@@ -509,10 +518,10 @@ class wp_boarddocs_xml {
 			$out .= '
 				</ol>';
 			$out .= '
-			</article>';
+			</div>';
 		}
 		$out .= '
-		</article>';
+		</div>';
 		
 		return $out;
 	}
@@ -539,7 +548,7 @@ class wp_boarddocs_xml {
 		$link_meeting = array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
 		
 		$out = '
-		<article class="board-minutes-list">';
+		<div class="board-minutes-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
 		foreach ( $xml as $item ) {
@@ -547,11 +556,11 @@ class wp_boarddocs_xml {
 				continue;
 			
 			$out .= '
-			<article class="board-meeting">
-				<header>
+			<div class="board-meeting">
+				<div>
 					<h2>' . ( $link_meeting ? '<a href="' . $item->meeting[0]->link[0] . '">' . $item->meeting[0]->name . '</a>' : $item->meeting[0]->name ) . '</h2>
 					<p class="meeting-date"><time datetime="' . $item->meeting[0]->date[0] . '">' . $this->ap_date( $item->meeting[0]->date[0] ) . '</time></p>
-				</header>';
+				</div>';
 			
 			foreach ( $item->agendaitem as $agendaitem ) {
 				$out .= '
@@ -559,11 +568,11 @@ class wp_boarddocs_xml {
 			}
 			
 			$out .= '
-			</article>';
+			</div>';
 		}
 		
 		$out .= '
-		</article>';
+		</div>';
 		
 		return $out;
 	}
