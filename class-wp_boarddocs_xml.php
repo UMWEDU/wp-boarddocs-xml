@@ -10,6 +10,7 @@ class wp_boarddocs_xml {
 	var $feed_prefix      = null;
 	var $adopted_text     = 'Adopted on ';
 	var $not_adopted_text = 'Not yet adopted';
+	var $revised_text     = 'Last revised on ';
 	var $transient_time   = 1800;
 	
 	/**
@@ -201,6 +202,7 @@ class wp_boarddocs_xml {
 		$link_policy	= array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
 		$adopted_text 	= array_key_exists( 'adopted_text', $atts ) ? $atts['adopted_text'] : $this->adopted_text;
 		$not_adopted_text 	= array_key_exists( 'not_adopted_text', $atts ) ? $atts['not_adopted_text'] : $this->not_adopted_text;
+		$revised_text   = array_key_exists( 'revised_text', $atts ) ? $atts['revised_text'] : $this->revised_text;
 		
 		$out = '
 		<div class="policy-list">';
@@ -247,6 +249,8 @@ class wp_boarddocs_xml {
 						<p class="policy-adopted-date">' . $not_adopted_text . '</p>' : 
 						'
 						<p class="policy-adopted-date">' . $adopted_text . '<time datetime="' . $policy->adopted[0]->date[0] . '">' . $this->ap_date( $policy->adopted[0]->date[0] ) . '</time></p>';
+					$out .= empty( $policy->lastrevised[0]->date[0] ) ? '' : '
+						<p class="policy-revised-date">' . $revised_text . '<time datetime="' . $policy->lastrevised[0]->date[0] . '">' . $this->ap_date( $policy->lastrevised[0]->date[0] ) . '</time></p>';
 					$out .= '
 					</li>';
 				}
