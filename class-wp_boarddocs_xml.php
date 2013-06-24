@@ -478,16 +478,120 @@ class wp_boarddocs_xml {
 	 * Output the Active Meetings XML Feed
 	 */
 	function display_activemeetings( $atts=array() ) {
+		/*print( "\n<!-- The shortcode attributes look like:\n" );
+		var_dump( $atts );
+		print( "\n-->\n" );*/
 		$show_meeting = array_key_exists( 'meeting', $atts ) ? html_entity_decode( $atts['meeting'] ) : false;
 		$link_meeting = array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
+		
+		$orderby = array_key_exists( 'orderby', $atts ) ? esc_attr( $atts['orderby'] ) : 'menu_order';
+		$order = array_key_exists( 'order', $atts ) ? esc_attr( $atts['order'] ) : 'asc';
+		
+		$year = array_key_exists( 'year', $atts ) ? intval( $atts['year'] ) : false;
+		$start = array_key_exists( 'start', $atts ) ? $atts['start'] : false;
+		$end = array_key_exists( 'end', $atts ) ? $atts['end'] : false;
 		
 		$out = '
 		<div class="board-meeting-list">';
 		$xml = simplexml_load_string( $this->feed_data );
 		
-		foreach ( $xml as $meeting ) {
+		$meetings = array();
+		foreach( $xml as $meeting ) {
+			/*print( "\n<!-- Investigating the following meeting element:\n" );
+			var_dump( $meeting );
+			print( "\n-->\n" );*/
+			
+			switch( $orderby ) {
+				case 'date' : 
+				case 'post_date' : 
+					$key = (string) $meeting->start->date[0];
+					/*print( "\n<!-- The meeting start date is " . $meeting->start->date[0] . " -->\n" );*/
+					$tmpkey = $key;
+					$i = 1;
+					while ( array_key_exists( $tmpkey, $meetings ) ) {
+						$tmpkey = $key . '-' . $i;
+						$i++;
+					}
+					$key = $tmpkey;
+					break;
+				case 'title' : 
+				case 'post_title' : 
+				case 'name' : 
+					$key = (string) $meeting->name[0];
+					$tmpkey = $key;
+					$i = 1;
+					while ( array_key_exists( $tmpkey, $meetings ) ) {
+						$tmpkey = $key . '-' . $i;
+						$i++;
+					}
+					$key = $tmpkey;
+					break;
+				case 'ID' : 
+				case 'id' : 
+					$key = (string) $meeting['id'];
+					$tmpkey = $key;
+					break;
+				case 'menu_order' : 
+				case 'order' : 
+				default : 
+					$key = intval( $meeting['order'] );
+					$tmpkey = $key;
+					$i = 1;
+					while ( array_key_exists( $tmpkey, $meetings ) && $i < 10 ) {
+						$tmpkey = $key + ( $i * .1 );
+						$i++;
+					}
+					$key = $tmpkey;
+					break;
+			}
+			/*print( "\n<!-- Preparing to store {$meeting['id']} as the value of the meetings item with key {$key} -->\n" );*/
+			$meetings[$key] = (string) $meeting['id'];
+		}
+		
+		/*print( "\n<!-- The meetings array looks like:\n" );
+		var_dump( $meetings );
+		print( "\n-->\n" );*/
+		
+		if ( 'desc' == $order ) {
+			krsort( $meetings );
+		} else {
+			ksort( $meetings );
+		}
+		
+		foreach ( $meetings as $m ) {
+			$meeting = $xml->xpath( 'meeting[@id="' . $m . '"]' );
+			if ( ! is_object( $meeting ) && is_array( $meeting ) )
+				$meeting = array_shift( $meeting );
+			/*print( "\n<!-- The meeting object looks like:\n" );
+			var_dump( $meeting );
+			print( "\n-->\n" );*/
+			
 			if ( $show_meeting && $show_meeting != $meeting['id'] )
 				continue;
+			if ( $year ) {
+				$tmpdate = $meeting->start[0]->date[0];
+				if ( $tmpstamp = strtotime( $tmpdate ) ) {
+					if ( $year != date( "Y", $tmpstamp ) )
+						continue;
+				}
+			}
+			if ( $start ) {
+				print( "\n<!-- Start value is $start -->\n" );
+				print( "\n<!-- Meeting date is {$meeting->start->date[0]} -->\n" );
+				$tmpstamp = strtotime( $start . '-01 00:00:00' );
+				$tmpstamp2 = strtotime( (string) $meeting->start->date[0] );
+				print( "\n<!-- Comparing $tmpstamp value to $tmpstamp2 meeting date -->\n" );
+				if ( $tmpstamp2 < $tmpstamp )
+					continue;
+				
+			}
+			if ( $end ) {
+				$tmpstamp = strtotime( $end . '-01 00:00:00' );
+				$tmpstamp2 = strtotime( (string) $meeting->start->date[0] );
+				print( "\n<!-- Comparing $tmpstamp value to $tmpstamp2 meeting date -->\n" );
+				if ( $tmpstamp2 > $tmpstamp )
+					continue;
+			}
 			
 			$out .= '
 			<div class="board-meeting" id="board-meeting-' . $meeting['id'] . '">';
