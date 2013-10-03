@@ -12,8 +12,11 @@ License: GPL2
 if( !class_exists( 'wp_boarddocs_xml' ) )
 	require_once( WP_PLUGIN_DIR . '/wp-boarddocs-xml/class-wp_boarddocs_xml.php' );
 
-global $wp_boarddocs_xml;
-$wp_boarddocs_xml = new wp_boarddocs_xml;
+function inst_bdxml() {
+	global $wp_boarddocs_xml;
+	$wp_boarddocs_xml = new wp_boarddocs_xml;
+}
+add_action( 'muplugins_loaded', 'inst_bdxml' );
 
 if( !class_exists( 'wp_board_docs_widget' ) ) {
 	if( file_exists( dirname( __FILE__ ) . '/class-wp-board-docs-widget.php' ) )

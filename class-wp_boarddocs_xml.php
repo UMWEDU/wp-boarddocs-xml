@@ -185,7 +185,7 @@ class wp_boarddocs_xml {
 			$atts['type'] = $this->_determine_type( $atts['feed'] );
 		
 		if ( method_exists( $this, 'display_' . strtolower( $atts['type'] ) ) )
-			return call_user_method( 'display_' . strtolower( $atts['type'] ), $this, $atts );
+			return call_user_func( array( $this, 'display_' . strtolower( $atts['type'] ) ), $atts );
 		
 		return '';
 	}
