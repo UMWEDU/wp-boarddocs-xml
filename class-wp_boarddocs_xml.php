@@ -194,9 +194,9 @@ class wp_boarddocs_xml {
 	 * Output the ActivePolicies XML feed
 	 */
 	function display_activepolicies( $atts=array() ) {
-		print( "\n<!--\n" );
+		/*print( "\n<!--\n" );
 		var_dump( $atts );
-		print( "\n-->\n" );
+		print( "\n-->\n" );*/
 		$show_book 		= array_key_exists( 'book', $atts ) ? html_entity_decode( $atts['book'] ) : false;
 		$show_section 	= array_key_exists( 'section', $atts ) ? html_entity_decode( $atts['section'] ) : false;
 		$link_policy	= array_key_exists( 'link', $atts ) ? ( 'false' == $atts['link'] ? false : true ) : true;
@@ -491,6 +491,9 @@ class wp_boarddocs_xml {
 		$start = array_key_exists( 'start', $atts ) ? $atts['start'] : false;
 		$end = array_key_exists( 'end', $atts ) ? $atts['end'] : false;
 		
+		$show_description = array_key_exists( 'show_description', $atts ) && in_array( $atts['show_description'], array( 'true', true, 1, '1' ), true );
+		$show_content = array_key_exists( 'show_content', $atts ) && in_array( $atts['show_content'], array( 'true', true, 1, '1' ), true );
+		
 		$out = '
 		<div class="board-meeting-list">';
 		$xml = simplexml_load_string( $this->feed_data );
@@ -602,29 +605,36 @@ class wp_boarddocs_xml {
 			$out .= empty( $meeting->start[0]->date[0] ) ? '' : '<p class="meeting-date"><time datetime="' . $meeting->start[0]->date[0] . '">' . $this->ap_date( $meeting->start[0]->date[0] ) . '</time></p>';
 			$out .= '
 				</div>';
-			$out .= '
-				<p class="meeting-description">' . nl2br( $meeting->description[0] ) . '</p>';
-			$out .= '
-				<ol class="meeting-agenda">';
-			foreach ( $meeting->category as $agenda ) {
+			
+			if ( $show_description ) {
 				$out .= '
-				<li class="meeting-agenda-category" id="agenda-category' . $agenda['id'] . '">
-					<div>
-						<h3 class="agenda-title">' . $agenda->name . '</h3>
-					</div>
-					<ol class="agenda-items">';
-				foreach ( $agenda->agendaitems as $item ) {
+				<p class="meeting-description">' . nl2br( $meeting->description[0] ) . '</p>';
+			}
+			
+			if ( $show_content ) {
+				$out .= '
+					<ol class="meeting-agenda">';
+				foreach ( $meeting->category as $agenda ) {
 					$out .= '
-						<li class="agenda-item" id="agenda-item-' . $item['id'] . '">
-							<a href="' . $item->link[0] . '">' . $item->name[0] . '</a>
-						</li>';
+					<li class="meeting-agenda-category" id="agenda-category' . $agenda['id'] . '">
+						<div>
+							<h3 class="agenda-title">' . $agenda->name . '</h3>
+						</div>
+						<ol class="agenda-items">';
+					foreach ( $agenda->agendaitems as $item ) {
+						$out .= '
+							<li class="agenda-item" id="agenda-item-' . $item['id'] . '">
+								<a href="' . $item->link[0] . '">' . $item->name[0] . '</a>
+							</li>';
+					}
+					$out .= '
+						</ol>
+					</li>';
 				}
 				$out .= '
-					</ol>
-				</li>';
+					</ol>';
 			}
-			$out .= '
-				</ol>';
+			
 			$out .= '
 			</div>';
 		}

@@ -67,6 +67,8 @@ class wp_board_docs_widget extends WP_Widget {
 			$instance['show_what'] = $new['show_what'];
 		else
 			$instance['show_what'] = null;
+		$instance['show_description'] = isset( $new['show_description'] );
+		$instance['show_content'] = isset( $new['show_content'] );
 		
 		return $instance;
 	}
@@ -91,6 +93,10 @@ class wp_board_docs_widget extends WP_Widget {
     <p><label for="<?php echo $this->get_field_id( 'show_what' ) ?>">Show What?</label>
     	<select class="widefat boarddocs_sections" name="<?php echo $this->get_field_name( 'show_what' ) ?>" id="<?php echo $this->get_field_id( 'show_what' ) ?>"><option value="" selected="selected">Show All Sections</option></select>
         <span style="display: none;" class="bdPreviousValue"><?php echo isset( $instance['show_what'] ) ? $instance['show_what'] : '' ?></span></p>
+	<p><input type="checkbox" name="<?php echo $this->get_field_name( 'show_description' ) ?>" id="<?php echo $this->get_field_id( 'show_description' ) ?>" value="1"<?php checked( $instance['show_description'] ) ?>/> 
+		<label for="<?php echo $this->get_field_id( 'show_description' ) ?>"><?php _e( 'Show Description (if applicable)?' ) ?></label></p>
+	<p><input type="checkbox" name="<?php echo $this->get_field_name( 'show_content' ) ?>" id="<?php echo $this->get_field_id( 'show_content' ) ?>" value="1"<?php checked( $instance['show_content'] ) ?>/> 
+		<label for="<?php echo $this->get_field_id( 'show_content' ) ?>"><?php _e( 'Show Meeting Agenda (if applicable)?' ) ?></label></p>
 <input class="boarddocs_prefix_val" type="hidden" name="<?php echo $this->get_field_name( 'prefix' ) ?>" value="<?php echo $this->bdxml_obj->feed_prefix ?>"/>
 <?php
 	}
