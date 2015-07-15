@@ -39,7 +39,7 @@ class wp_boarddocs_xml {
 		if ( function_exists( 'get_mnetwork_option' ) )
 			$this->feed_prefix = esc_url( get_mnetwork_option( 'wp-boarddocs-feed-prefix', false ) );
 		else
-			$this->feed_prefix = esc_url( get_site_option( 'wp-boarddocs-feed-prefix', false ) );
+			$this->feed_prefix = esc_url( get_option( 'wp-boarddocs-feed-prefix', false ) );
 	}
 	
 	/**
@@ -92,7 +92,7 @@ class wp_boarddocs_xml {
 			if ( function_exists( 'get_mnetwork_option' ) )
 				$this->feed_default = get_mnetwork_option( 'wp-boarddocs-feed-default', false );
 			else
-				$this->feed_default = get_site_option( 'wp-boarddocs-feed-default', false );
+				$this->feed_default = get_option( 'wp-boarddocs-feed-default', false );
 		}
 ?>
 	<select name="wp-boarddocs-feed-default" id="wp-boarddocs-feed-default">
