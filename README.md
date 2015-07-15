@@ -41,3 +41,8 @@ The shortcode implemented by this plugin is `[boarddocs-feed]`. It accepts the f
 1. Activate the plugin
 1. Go to Settings -> General and configure the settings for the plugin
 1. Use the widget or shortcode where appropriate
+
+## Changelog ##
+
+### 0.3 ###
+* Fix errors that show up when plugin is active on non-multinetwork install

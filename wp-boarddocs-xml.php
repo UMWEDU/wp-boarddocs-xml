@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: BoardDocs XML Parser for WordPress
-Version: 0.2a
+Version: 0.3
 Plugin URI: http://plugins.ten-321.com/boarddocs-xml-parser-for-wordpress/
 Description: Allows you to import and display the contents of a BoardDocs XML feed using shortcodes and widgets in a post or page within WordPress. At this time, this plugin only handles the ActivePolicies feed, but it will probably be extended to handle the other feeds available from BoardDocs.
 Author: Curtiss Grymala

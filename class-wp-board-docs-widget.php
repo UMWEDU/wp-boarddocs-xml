@@ -1,6 +1,8 @@
 <?php
 /**
  * BoardDocs XML Widget Class
+ * @package wp-boarddocs-xml
+ * @version 0.3
  */
 class wp_board_docs_widget extends WP_Widget {
 	var $bdxml_obj = null;

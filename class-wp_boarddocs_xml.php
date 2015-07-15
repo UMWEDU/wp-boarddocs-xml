@@ -2,6 +2,8 @@
 /**
  * WP BoardDocs XML class
  * A class to assist in parsing and displaying an XML file from BoardDocs in WordPress
+ * @package wp-boarddocs-xml
+ * @version 0.3
  */
 class wp_boarddocs_xml {
 	var $feed             = null;
@@ -34,7 +36,10 @@ class wp_boarddocs_xml {
 	}
 	
 	function get_feed_prefix() {
-		$this->feed_prefix = esc_url( get_mnetwork_option( 'wp-boarddocs-feed-prefix', false ) );
+		if ( function_exists( 'get_mnetwork_option' ) )
+			$this->feed_prefix = esc_url( get_mnetwork_option( 'wp-boarddocs-feed-prefix', false ) );
+		else
+			$this->feed_prefix = esc_url( get_site_option( 'wp-boarddocs-feed-prefix', false ) );
 	}
 	
 	/**
@@ -83,8 +88,12 @@ class wp_boarddocs_xml {
 	 * Output the HTML for the Default-type field
 	 */
 	function settings_field_default( $args ) {
-		if ( empty( $this->feed_default ) )
-			$this->feed_default = get_mnetwork_option( 'wp-boarddocs-feed-default', false );
+		if ( empty( $this->feed_default ) ) {
+			if ( function_exists( 'get_mnetwork_option' ) )
+				$this->feed_default = get_mnetwork_option( 'wp-boarddocs-feed-default', false );
+			else
+				$this->feed_default = get_site_option( 'wp-boarddocs-feed-default', false );
+		}
 ?>
 	<select name="wp-boarddocs-feed-default" id="wp-boarddocs-feed-default">
     	<option value=""><?php _e( '-- Please choose one --' ) ?></option>
