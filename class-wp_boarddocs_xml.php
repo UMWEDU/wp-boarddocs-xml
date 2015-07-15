@@ -112,50 +112,32 @@ class wp_boarddocs_xml {
 	 * Save the Prefix setting
 	 */
 	function save_settings_prefix( $input ) {
-		if ( ! isset( $GLOBALS['updating_mnetwork_option'] ) || ! $GLOBALS['updating_mnetwork_option'] ) {
-			if ( function_exists( 'update_mnetwork_option' ) )
-				update_mnetwork_option( 'wp-boarddocs-feed-prefix', $input );
-			else
-				update_site_option( 'wp-boarddocs-feed-prefix', $input );
-				
-			return false;
-		} else {
-			$input = esc_url( $input );
-			
-			if ( empty( $input ) )
-				return null;
-			
-			foreach ( $this->feed_types as $ft=>$ignore ) {
-				$type_len = 0 - strlen( $ft );
-				if( strtolower( $ft ) == strtolower( substr( $input, $type_len ) ) ) {
-					$input = substr( $input, 0, $type_len );
-					break;
-				}
-			}
-			if ( '-' != substr( $input, -1 ) )
-				$input .= '-';
-			
-			return $input;
-		}
+		$input = esc_url( $input );
 		
-		return false;
+		if ( empty( $input ) )
+			return null;
+		
+		foreach ( $this->feed_types as $ft=>$ignore ) {
+			$type_len = 0 - strlen( $ft );
+			if( strtolower( $ft ) == strtolower( substr( $input, $type_len ) ) ) {
+				$input = substr( $input, 0, $type_len );
+				break;
+			}
+		}
+		if ( '-' != substr( $input, -1 ) )
+			$input .= '-';
+		
+		return $input;
 	}
 	
 	/**
 	 * Save the Default-type setting
 	 */
 	function save_settings_default( $input ) {
-		if ( !isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
-			update_mnetwork_option( 'wp-boarddocs-feed-default', $input );
-			return false;
-		} else {
-			if ( empty( $input ) || !array_key_exists( $input, $this->feed_types ) )
-				return null;
-			
-			return $input;
-		}
+		if ( empty( $input ) || ! array_key_exists( $input, $this->feed_types ) )
+			return null;
 		
-		return false;
+		return $input;
 	}
 	
 	/**
