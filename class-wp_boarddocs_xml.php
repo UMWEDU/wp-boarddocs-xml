@@ -112,8 +112,12 @@ class wp_boarddocs_xml {
 	 * Save the Prefix setting
 	 */
 	function save_settings_prefix( $input ) {
-		if ( ! isset( $GLOBALS['updating_mnetwork_option'] ) || !$GLOBALS['updating_mnetwork_option'] ) {
-			update_mnetwork_option( 'wp-boarddocs-feed-prefix', $input );
+		if ( ! isset( $GLOBALS['updating_mnetwork_option'] ) || ! $GLOBALS['updating_mnetwork_option'] ) {
+			if ( function_exists( 'update_mnetwork_option' ) )
+				update_mnetwork_option( 'wp-boarddocs-feed-prefix', $input );
+			else
+				update_site_option( 'wp-boarddocs-feed-prefix', $input );
+				
 			return false;
 		} else {
 			$input = esc_url( $input );
