@@ -9,20 +9,12 @@ Author URI: http://ten-321.com/
 License: GPL2
 */
 
-if( !class_exists( 'wp_boarddocs_xml' ) )
-	require_once( WP_PLUGIN_DIR . '/wp-boarddocs-xml/class-wp_boarddocs_xml.php' );
-
-function inst_bdxml() {
-	global $wp_boarddocs_xml;
-	$wp_boarddocs_xml = new wp_boarddocs_xml;
+if ( ! defined( 'ABSPATH' ) ) {
+	die( 'You do not have permission to access this file directly.' );
 }
-add_action( 'muplugins_loaded', 'inst_bdxml' );
 
-if( !class_exists( 'wp_board_docs_widget' ) ) {
-	if( file_exists( dirname( __FILE__ ) . '/class-wp-board-docs-widget.php' ) )
-		require_once( dirname( __FILE__ ) . '/class-wp-board-docs-widget.php' );
-	elseif( file_exists( dirname( __FILE__ ) . '/wp-boarddocs-xml/class-wp-board-docs-widget.php' ) )
-		require_once( dirname( __FILE__ ) . '/wp-boarddocs-xml/class-wp-board-docs-widget.php' );
+if ( ! class_exists( 'WP_BoardDocs_XML' ) ) {
+	require_once( plugin_dir_path( __FILE__ ) . '/classes/class-wp-boarddocs-xml.php' );
+	global $wp_boarddocs_xml_obj;
+	$wp_boarddocs_xml_obj = WP_BoardDocs_XML::instance();
 }
-add_action( 'widgets_init', create_function( '', 'return register_widget("wp_board_docs_widget");' ) );
-?>
