@@ -194,10 +194,13 @@ class WP_BoardDocs_XML {
 	 * Output the HTML of the appropriate settings field
 	 */
 	function settings_field( $args ) {
-		if( 'wp-boarddocs-feed-default' == $args['label_for'] )
-			return $this->settings_field_default( $args );
-		else
-			return $this->settings_field_prefix( $args );
+		if( 'wp-boarddocs-feed-default' == $args['label_for'] ) {
+			$this->settings_field_default( $args );
+			return;
+		} else {
+			$this->settings_field_prefix( $args );
+			return;
+		}
 	}
 	
 	/**

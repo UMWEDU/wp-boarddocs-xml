@@ -23,7 +23,7 @@ class WP_BoardDocs_Widget extends WP_Widget {
 	function __construct() {
 		parent::WP_Widget( 'boarddocs-xml', __( 'BoardDocs XML Feeds' ), array( 'classname' => 'boarddocs-xml', 'description' => __( 'Displays the output from a BoardDocs XML feed' ) ) );
 		$this->bdxml_obj = WP_BoardDocs_XML::instance();
-		$this->feed_types = $this->bdxml_obj->get_feed_types();
+		$this->feed_types = $this->bdxml_obj->feed_types;
 		
 		if ( is_admin() ) {
 			wp_register_script( 'boarddocs-widget-ajax', plugins_url( '/scripts/widget-ajax.js', dirname( __FILE__ ) ), array( 'jquery' ), '0.2.30', true );
