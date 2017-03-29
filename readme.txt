@@ -4,7 +4,7 @@ Tags: boarddocs, policies, feed
 Donate link: http://giving.umw.edu/
 Requires at least: 3.5
 Tested up to: 4.3
-Stable tag: 0.1
+Stable tag: 0.4
 License: GPLv2 or later
 
 Allows WordPress to consume and display information from BoardDocs XML feeds.
@@ -36,6 +36,10 @@ The shortcode implemented by this plugin is `[boarddocs-feed]`. It accepts the f
 1. Use the widget or shortcode where appropriate
 
 == Changelog ==
+
+= 0.4 =
+* Modify plugin file structure
+* Minor updates to code structure/usage
 
 = 0.3 =
 * Fix errors that show up when plugin is active on non-multinetwork install
