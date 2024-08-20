@@ -24,5 +24,5 @@ if( !class_exists( 'wp_board_docs_widget' ) ) {
 	elseif( file_exists( dirname( __FILE__ ) . '/wp-boarddocs-xml/class-wp-board-docs-widget.php' ) )
 		require_once( dirname( __FILE__ ) . '/wp-boarddocs-xml/class-wp-board-docs-widget.php' );
 }
-add_action( 'widgets_init', create_function( '', 'return register_widget("wp_board_docs_widget");' ) );
-?>
+
+add_action( 'widgets_init', function() { return register_widget('wp_board_docs_widget'); } );
