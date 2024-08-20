@@ -1,18 +1,10 @@
 <?php
 /**
  * BoardDocs XML Widget Class
- * @package WordPress
- * @subpackage WP BoardDocs XML
- * @version 0.4
+ * @package wp-boarddocs-xml
+ * @version 0.3
  */
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'You do not have permission to access this file directly.' );
-}
-
-/**
- * Class WP_BoardDocs_Widget
- */
-class WP_BoardDocs_Widget extends WP_Widget {
+class wp_board_docs_widget extends WP_Widget {
 	var $bdxml_obj = null;
 	var $feed_types = array();
 	
@@ -22,18 +14,39 @@ class WP_BoardDocs_Widget extends WP_Widget {
 	
 	function __construct() {
 		parent::WP_Widget( 'boarddocs-xml', __( 'BoardDocs XML Feeds' ), array( 'classname' => 'boarddocs-xml', 'description' => __( 'Displays the output from a BoardDocs XML feed' ) ) );
-		$this->bdxml_obj = WP_BoardDocs_XML::instance();
-		$this->feed_types = $this->bdxml_obj->feed_types;
+		$this->feed_types = apply_filters( 'bdxml-feed-types', array( 
+			'ActivePolicies' => __( 'Active Policies' ), 
+			'Board' => __( 'Board Members' ), 
+			'Events' => __( 'Events' ), 
+			'General' => __( 'General' ), 
+			'Goals' => __( 'Goals' ), 
+			'ActiveMeetings' => __( 'Active Meetings' ), 
+			'CurrentMeetings' => __( 'Current Meetings' ), 
+			'PoliciesUnderConsideration' => __( 'Policies Under Consideration' ), 
+			'Minutes' => __( 'Minutes' ) 
+		) );
 		
 		if ( is_admin() ) {
-			wp_register_script( 'boarddocs-widget-ajax', plugins_url( '/scripts/widget-ajax.js', dirname( __FILE__ ) ), array( 'jquery' ), '0.2.30', true );
+			wp_register_script( 'boarddocs-widget-ajax', plugins_url( '/scripts/widget-ajax.js', __FILE__ ), array( 'jquery' ), '0.2.30', true );
 			wp_enqueue_script( 'boarddocs-widget-ajax' );
-			wp_localize_script( 'boarddocs-widget-ajax', 'boarddocs_widget', array( 'ajax_url' => plugins_url( '/scripts/widget-ajax-xml.php', dirname( __FILE__ ) ) ) );
+			wp_localize_script( 'boarddocs-widget-ajax', 'boarddocs_widget', array( 'ajax_url' => plugins_url( '/scripts/widget-ajax-xml.php', __FILE__ ) ) );
+		}
+		
+		if ( isset( $GLOBALS['wp_boarddocs_xml'] ) ) {
+			$this->bdxml_obj = $GLOBALS['wp_boarddocs_xml'];
+		} else {
+			global $wp_boarddocs_xml;
+			$wp_boarddocs_xml = new wp_boarddocs_xml();
+			$this->bdxml_obj = $wp_boarddocs_xml;
 		}
 	}
 	
 	function widget( $args, $instance ) {
 		extract( $args );
+		/*if ( empty( $instance['feed'] ) ) {
+			print( "\n<!-- For some reason, the instance param was empty, so no output is being generated -->\n" );
+			return;
+		}*/
 		
 		echo $before_widget;
 		
@@ -79,9 +92,9 @@ class WP_BoardDocs_Widget extends WP_Widget {
 		}
 ?>
 	</select></p>
-	<p><label for="<?php echo $this->get_field_id( 'show_what' ) ?>">Show What?</label>
-		<select class="widefat boarddocs_sections" name="<?php echo $this->get_field_name( 'show_what' ) ?>" id="<?php echo $this->get_field_id( 'show_what' ) ?>"><option value="" selected="selected">Show All Sections</option></select>
-		<span style="display: none;" class="bdPreviousValue"><?php echo isset( $instance['show_what'] ) ? $instance['show_what'] : '' ?></span></p>
+    <p><label for="<?php echo $this->get_field_id( 'show_what' ) ?>">Show What?</label>
+    	<select class="widefat boarddocs_sections" name="<?php echo $this->get_field_name( 'show_what' ) ?>" id="<?php echo $this->get_field_id( 'show_what' ) ?>"><option value="" selected="selected">Show All Sections</option></select>
+        <span style="display: none;" class="bdPreviousValue"><?php echo isset( $instance['show_what'] ) ? $instance['show_what'] : '' ?></span></p>
 	<p><input type="checkbox" name="<?php echo $this->get_field_name( 'show_description' ) ?>" id="<?php echo $this->get_field_id( 'show_description' ) ?>" value="1"<?php checked( $instance['show_description'] ) ?>/> 
 		<label for="<?php echo $this->get_field_id( 'show_description' ) ?>"><?php _e( 'Show Description (if applicable)?' ) ?></label></p>
 	<p><input type="checkbox" name="<?php echo $this->get_field_name( 'show_content' ) ?>" id="<?php echo $this->get_field_id( 'show_content' ) ?>" value="1"<?php checked( $instance['show_content'] ) ?>/> 
@@ -90,3 +103,4 @@ class WP_BoardDocs_Widget extends WP_Widget {
 <?php
 	}
 }
+?>

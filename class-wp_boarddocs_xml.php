@@ -2,165 +2,37 @@
 /**
  * WP BoardDocs XML class
  * A class to assist in parsing and displaying an XML file from BoardDocs in WordPress
- * @package WordPress
- * @subpackage WP BoardDocs XML
- * @version 0.4
+ * @package wp-boarddocs-xml
+ * @version 0.3
  */
-if ( ! defined( 'ABSPATH' ) ) {
-	die( 'You do not have permission to access this file directly.' );
-}
-
-/**
- * Class WP_BoardDocs_XML
- */
-class WP_BoardDocs_XML {
-	/**
-	 * @access public
-	 * @since 0.1
-	 * @var null|string the URL to the current feed
-	 */
-	public $feed             = null;
-	/**
-	 * @access public
-	 * @since  0.1
-	 * @var null|string the XML content of the feed being retrieved
-	 */
-	public $feed_data        = null;
-	/**
-	 * @access public
-	 * @since  0.1
-	 * @var array the associative list of types feeds available to retrieve
-	 */
-	public $feed_types       = array();
-	/**
-	 * @access public
-	 * @since  0.1
-	 * @var null|string the bulk of the URL used to retrieve the feeds (everything that occurs before the feed type declaration)
-	 */
-	public $feed_prefix      = null;
-	/**
-	 * @access public
-	 * @since  0.1
-	 * @var string the text that should be displayed when indicating when a policy was adopted
-	 */
-	public $adopted_text     = '';
-	/**
-	 * @access public
-	 * @since  0.1
-	 * @var string the text that should be displayed before a policy if it has not yet been adopted
-	 */
-	public $not_adopted_text = '';
-	/**
-	 * @access public
-	 * @since  0.1
-	 * @var string the text that should be displayed indicating when a policy was most recently revised
-	 */
-	public $revised_text     = '';
-	/**
-	 * @access public
-	 * @since  0.1
-	 * @var int the amount of time (in seconds) the feed data should be cached
-	 */
-	public $transient_time   = 1800;
-	/**
-	 * Holds the version number for use with various assets
-	 *
-	 * @since  0.1
-	 * @access public
-	 * @var    string
-	 */
-	public $version          = '0.4';
-	/**
-	 * Holds the class instance.
-	 *
-	 * @since     0.1
-	 * @access    private
-	 * @var        \WP_BoardDocs_XML
-	 */
-	private static $instance;
-	
-	/**
-	 * Returns the instance of this class.
-	 *
-	 * @access  public
-	 * @since   0.1
-	 * @return    \WP_BoardDocs_XML
-	 */
-	public static function instance() {
-		if ( ! isset( self::$instance ) ) {
-			$className      = __CLASS__;
-			self::$instance = new $className;
-		}
-		
-		return self::$instance;
-	}
+class wp_boarddocs_xml {
+	var $feed             = null;
+	var $feed_data        = null;
+	var $feed_types       = null;
+	var $feed_prefix      = null;
+	var $adopted_text     = 'Adopted on ';
+	var $not_adopted_text = 'Not yet adopted';
+	var $revised_text     = 'Last revised on ';
+	var $transient_time   = 1800;
 	
 	/**
 	 * Build our object
 	 */
 	function __construct() {
-		add_action( 'plugins_loaded', array( $this, 'startup' ) );
-	}
-	
-	/**
-	 * Perform any registration/setup actions that need to happen when this plugin
-	 *      is invoked
-	 *
-	 * @access public
-	 * @since  0.4
-	 * @return void
-	 */
-	function startup() {
-		$this->adopted_text = __( 'Adopted on ', 'wp-boarddocs-xml' );
-		$this->not_adopted_text = __( 'Not yet adopted', 'wp-boarddocs-xml' );
-		$this->revised_text = __( 'Last revised on ', 'wp-boarddocs-xml' );
-		
-		add_action( 'widgets_init', array( $this, 'register_widget' ) );
-		
 		add_shortcode( 'boarddocs-feed', array( $this, 'display_feed' ) );
-		
 		$this->get_feed_prefix();
-		$this->_get_feed_types();
-		
 		add_action( 'admin_init', array( &$this, 'admin_init' ) );
-	}
-	
-	/**
-	 * Register the BoardDocs XML Widget
-	 *
-	 * @access public
-	 * @since  0.4
-	 * @return void
-	 */
-	function register_widget() {
-		if ( ! class_exists( 'WP_BoardDocs_Widget' ) ) {
-			require_once( plugin_dir_path( __FILE__ ) . '/class-wp-boarddocs-widget.php' );
-		}
-		
-		register_widget('WP_BoardDocs_Widget' );
-	}
-	
-	/**
-	 * Determine which feed types are available from BoardDocs
-	 *
-	 * @access private
-	 * @since  0.4
-	 * @return array() an associative list of handles and labels for the types of feeds available
-	 */
-	private function _get_feed_types() {
-		$this->feed_types = apply_filters( 'bdxml-feed-types', array(
-			'ActivePolicies' => __( 'Active Policies' ),
-			'Board' => __( 'Board Members' ),
-			'Events' => __( 'Events' ),
-			'General' => __( 'General' ),
-			'Goals' => __( 'Goals' ),
-			'ActiveMeetings' => __( 'Active Meetings' ),
-			'CurrentMeetings' => __( 'Current Meetings' ),
-			'PoliciesUnderConsideration' => __( 'Policies Under Consideration' ),
-			'Minutes' => __( 'Minutes' )
+		$this->feed_types = apply_filters( 'bdxml-feed-types', array( 
+			'ActivePolicies' => __( 'Active Policies' ), 
+			'Board' => __( 'Board Members' ), 
+			'Events' => __( 'Events' ), 
+			'General' => __( 'General' ), 
+			'Goals' => __( 'Goals' ), 
+			'ActiveMeetings' => __( 'Active Meetings' ), 
+			'CurrentMeetings' => __( 'Current Meetings' ), 
+			'PoliciesUnderConsideration' => __( 'Policies Under Consideration' ), 
+			'Minutes' => __( 'Minutes' ) 
 		) );
-		
-		return $this->feed_types;
 	}
 	
 	function get_feed_prefix() {
@@ -194,13 +66,10 @@ class WP_BoardDocs_XML {
 	 * Output the HTML of the appropriate settings field
 	 */
 	function settings_field( $args ) {
-		if( 'wp-boarddocs-feed-default' == $args['label_for'] ) {
-			$this->settings_field_default( $args );
-			return;
-		} else {
-			$this->settings_field_prefix( $args );
-			return;
-		}
+		if( 'wp-boarddocs-feed-default' == $args['label_for'] )
+			return $this->settings_field_default( $args );
+		else
+			return $this->settings_field_prefix( $args );
 	}
 	
 	/**
@@ -211,7 +80,7 @@ class WP_BoardDocs_XML {
 			$this->get_feed_prefix();
 ?>
 	<input class="regular-text" type="url" name="<?php echo $args['label_for'] ?>" id="<?php echo $args['label_for'] ?>" value="<?php echo $this->feed_prefix ?>"/>
-	<p class="description"><?php printf( __( 'Please enter the beginning of the URL that leads to the XML feeds. This URL should be similar to %s. You can get this prefix by visiting one of your BoardDocs feeds and removing the part of the URL that appears after the last hyphen.' ), 'http://www.boarddocs.com/[state]/[organization]/Board.nsf/XML-' ) ?></p>
+    <p class="description"><?php printf( __( 'Please enter the beginning of the URL that leads to the XML feeds. This URL should be similar to %s. You can get this prefix by visiting one of your BoardDocs feeds and removing the part of the URL that appears after the last hyphen.' ), 'http://www.boarddocs.com/[state]/[organization]/Board.nsf/XML-' ) ?></p>
 <?php
 	}
 	
@@ -227,7 +96,7 @@ class WP_BoardDocs_XML {
 		}
 ?>
 	<select name="wp-boarddocs-feed-default" id="wp-boarddocs-feed-default">
-		<option value=""><?php _e( '-- Please choose one --' ) ?></option>
+    	<option value=""><?php _e( '-- Please choose one --' ) ?></option>
 <?php
 		foreach( $this->feed_types as $ft=>$lbl ) {
 ?>
@@ -235,7 +104,7 @@ class WP_BoardDocs_XML {
 <?php
 		}
 ?>
-	</select>
+    </select>
 <?php
 	}
 	
@@ -302,7 +171,7 @@ class WP_BoardDocs_XML {
 				$atts['section'] = str_replace( '[section]', '', $atts['show_what'] );*/
 		}
 		
-		wp_enqueue_style( 'wp-boarddocs', plugins_url( '/css/wp-boarddocs.css', dirname( __FILE__ ) ), array(), '0.1.27', 'all' );
+		wp_enqueue_style( 'wp-boarddocs', plugins_url( '/css/wp-boarddocs.css', __FILE__ ), array(), '0.1.27', 'all' );
 		
 		$this->_retrieve_feed( $atts['feed'] );
 		if ( empty( $this->feed_data ) )
